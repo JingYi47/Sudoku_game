@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sudoku Multiplayer Battle</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; }
+        .hidden { display: none; }
+        
+        /* Sudoku Board */
+        .sudoku-board { display: grid; grid-template-columns: repeat(9, 50px); gap: 1px; margin: 20px 0; }
+        .cell { width: 50px; height: 50px; text-align: center; font-size: 18px; border: 1px solid #999; }
+        .cell.fixed { background-color: #f0f0f0; font-weight: bold; }
+        .cell.selected { background-color: #e3f2fd; }
+        .cell.error { background-color: #ffebee; }
+        
+        /* Player Info */
+        .player-info { padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .player1 { background: #e3f2fd; border-left: 5px solid #2196F3; }
+        .player2 { background: #fff3e0; border-left: 5px solid #FF9800; }
+        
+        /* Number Pad */
+        .number-pad { display: grid; grid-template-columns: repeat(5, 50px); gap: 5px; margin: 10px 0; }
+        
+        .battle-info { background: #f5f5f5; padding: 15px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <h1>🎮 Sudoku Multiplayer Battle</h1>
+    
+    <!-- MATCHMAKING SECTION -->
+    <div id="matchmaking-section" class="section">
+        <h2>Join Matchmaking</h2>
+        <select id="difficulty">
+            <option value="Easy">Easy</option>
+            <option value="Medium" selected>Medium</option>
+            <option value="Hard">Hard</option>
+        </select>
+        <button onclick="joinMatchmaking()">🎯 Find Opponent</button>
+    </div>
+
+    <!-- WAITING SECTION -->
+    <div id="waiting-section" class="section hidden">
+        <h3>⏳ Searching for opponent...</h3>
+        <div class="battle-info">
+            <p>Difficulty: <span id="waiting-difficulty">Medium</span></p>
+            <p>Waiting time: <span id="waiting-time">0</span>s</p>
+        </div>
+        <button onclick="cancelMatchmaking()">Cancel</button>
+    </div>
+
+    <!-- BATTLE SECTION -->
+    <div id="battle-section" class="section hidden">
+        <h2>⚔️ Sudoku Battle</h2>
+        
+        <div class="battle-info">
+            <p>Difficulty: <span id="battle-difficulty">Medium</span> | 
+               Room: <span id="room-id">-</span> | 
+               Time: <span id="battle-time">0</span>s</p>
+        </div>
+
+        <!-- Player Scores -->
+        <div class="player-info player1">
+            <strong>🎯 YOU:</strong> 
+            Score: <span id="player1-score">0</span> ⭐ | 
+            Progress: <span id="player1-progress">0%</span> |
+            Cells Left: <span id="player1-cells">0</span>
+        </div>
+        
+        <div class="player-info player2">
+            <strong>👤 <span id="opponent-name">Opponent</span>:</strong> 
+            Score: <span id="player2-score">0</span> ⭐ | 
+            Progress: <span id="player2-progress">0%</span> |
+            Cells Left: <span id="player2-cells">0</span>
+        </div>
+
+        <!-- Sudoku Board -->
+        <h3>Your Board:</h3>
+        <div id="sudoku-board" class="sudoku-board"></div>
+
+        <!-- Number Pad -->
+        <h3>Number Pad:</h3>
+        <div class="number-pad">
+            <button onclick="selectNumber(1)">1</button>
+            <button onclick="selectNumber(2)">2</button>
+            <button onclick="selectNumber(3)">3</button>
+            <button onclick="selectNumber(4)">4</button>
+            <button onclick="selectNumber(5)">5</button>
+            <button onclick="selectNumber(6)">6</button>
+            <button onclick="selectNumber(7)">7</button>
+            <button onclick="selectNumber(8)">8</button>
+            <button onclick="selectNumber(9)">9</button>
+            <button onclick="clearCell()" style="grid-column: span 2;">Clear</button>
+        </div>
+
+        <!-- Game Controls -->
+        <div style="margin-top: 20px;">
+            <button onclick="submitMove()" style="background: #2196F3;">Submit Move</button>
+            <button onclick="requestHint()" style="background: #FF9800;">💡 Hint (-10 points)</button>
+            <button onclick="leaveBattle()" style="background: #f44336;">🏃 Leave Battle</button>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let currentRoom = null;
+        let gameBoard = [];
+        let solution = [];
+        let selectedCell = null;
+        let battleStartTime = null;
+        let battleTimer = null;
+
+        // WebSocket Connection
+        const socket = new WebSocket('ws://' + window.location.host + '/ws/multiplayer/');
+
+        socket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            console.log('WebSocket:', data);
+            
+            switch(data.type) {
+                case 'waiting':
+                    showSection('waiting-section');
+                    startWaitingTimer();
+                    break;
+                case 'match_found':
+                    startBattle(data);
+                    break;
+                case 'opponent_update':
+                    updateOpponentProgress(data);
+                    break;
+                case 'game_complete':
+                    endBattle(data);
+                    break;
+            }
+        };
+
+        // Matchmaking
+        function joinMatchmaking() {
+            const difficulty = document.getElementById('difficulty').value;
+            socket.send(JSON.stringify({
+                type: 'join_matchmaking',
+                difficulty: difficulty
+            }));
+            document.getElementById('waiting-difficulty').textContent = difficulty;
+            showSection('waiting-section');
+        }
+
+        function startBattle(data) {
+            currentRoom = data.room_id;
+            showSection('battle-section');
+            
+            // Set opponent name
+            const opponentName = data.player1 === '{{ user.username }}' ? data.player2 : data.player1;
+            document.getElementById('opponent-name').textContent = opponentName;
+            document.getElementById('room-id').textContent = data.room_id;
+            document.getElementById('battle-difficulty').textContent = data.difficulty;
+            
+            // Initialize game board (tạm thời dùng board mẫu)
+            initializeGameBoard();
+            
+            // Start battle timer
+            battleStartTime = Date.now();
+            startBattleTimer();
+            
+            // Calculate initial progress
+            updatePlayerProgress();
+        }
+
+        // Sudoku Game Functions
+        function initializeGameBoard() {
+            // Tạm thời tạo board mẫu - sau này sẽ random từ backend
+            gameBoard = [
+                [5, 3, 0, 0, 7, 0, 0, 0, 0],
+                [6, 0, 0, 1, 9, 5, 0, 0, 0],
+                [0, 9, 8, 0, 0, 0, 0, 6, 0],
+                [8, 0, 0, 0, 6, 0, 0, 0, 3],
+                [4, 0, 0, 8, 0, 3, 0, 0, 1],
+                [7, 0, 0, 0, 2, 0, 0, 0, 6],
+                [0, 6, 0, 0, 0, 0, 2, 8, 0],
+                [0, 0, 0, 4, 1, 9, 0, 0, 5],
+                [0, 0, 0, 0, 8, 0, 0, 7, 9]
+            ];
+            
+            renderBoard();
+        }
+
+        function renderBoard() {
+            const boardElement = document.getElementById('sudoku-board');
+            boardElement.innerHTML = '';
+            
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    if (gameBoard[row][col] !== 0) {
+                        cell.textContent = gameBoard[row][col];
+                        cell.classList.add('fixed');
+                    }
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    cell.onclick = () => selectCell(row, col);
+                    boardElement.appendChild(cell);
+                }
+            }
+        }
+
+        function selectCell(row, col) {
+            // Remove previous selection
+            document.querySelectorAll('.cell.selected').forEach(cell => {
+                cell.classList.remove('selected');
+            });
+            
+            // Select new cell
+            const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+            cell.classList.add('selected');
+            selectedCell = { row, col };
+        }
+
+        function selectNumber(num) {
+            if (!selectedCell) {
+                alert('Please select a cell first!');
+                return;
+            }
+            
+            const { row, col } = selectedCell;
+            if (gameBoard[row][col] === 0) {
+                gameBoard[row][col] = num;
+                renderBoard();
+                selectCell(row, col); // Reselect cell
+                updatePlayerProgress();
+            }
+        }
+
+        function clearCell() {
+            if (!selectedCell) return;
+            
+            const { row, col } = selectedCell;
+            if (gameBoard[row][col] !== 0) {
+                gameBoard[row][col] = 0;
+                renderBoard();
+                selectCell(row, col);
+                updatePlayerProgress();
+            }
+        }
+
+        function submitMove() {
+            // Calculate score based on time and accuracy
+            const timeElapsed = Math.floor((Date.now() - battleStartTime) / 1000);
+            const baseScore = 10;
+            const timeBonus = Math.max(0, 300 - timeElapsed); // Bonus for speed
+            const score = baseScore + Math.floor(timeBonus / 10);
+            
+            // Update score
+            const currentScore = parseInt(document.getElementById('player1-score').textContent) + score;
+            document.getElementById('player1-score').textContent = currentScore;
+            
+            // Send update to opponent
+            socket.send(JSON.stringify({
+                type: 'update_progress',
+                room_id: currentRoom,
+                score: currentScore,
+                progress: parseInt(document.getElementById('player1-progress').textContent)
+            }));
+            
+            alert(`+${score} points! Good move!`);
+        }
+
+        function updatePlayerProgress() {
+            let filledCells = 0;
+            let totalEmpty = 0;
+            
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    if (gameBoard[row][col] !== 0) filledCells++;
+                    else totalEmpty++;
+                }
+            }
+            
+            const progress = Math.floor((filledCells / 81) * 100);
+            document.getElementById('player1-progress').textContent = progress + '%';
+            document.getElementById('player1-cells').textContent = totalEmpty;
+            
+            // Send progress update
+            if (currentRoom) {
+                socket.send(JSON.stringify({
+                    type: 'update_progress',
+                    room_id: currentRoom,
+                    score: parseInt(document.getElementById('player1-score').textContent),
+                    progress: progress
+                }));
+            }
+        }
+
+        function updateOpponentProgress(data) {
+            document.getElementById('player2-score').textContent = data.score;
+            document.getElementById('player2-progress').textContent = data.progress + '%';
+            document.getElementById('player2-cells').textContent = 81 - Math.floor(data.progress * 0.81);
+        }
+
+        // Timer Functions
+        function startWaitingTimer() {
+            let seconds = 0;
+            setInterval(() => {
+                seconds++;
+                document.getElementById('waiting-time').textContent = seconds;
+            }, 1000);
+        }
+
+        function startBattleTimer() {
+            battleTimer = setInterval(() => {
+                const seconds = Math.floor((Date.now() - battleStartTime) / 1000);
+                document.getElementById('battle-time').textContent = seconds;
+            }, 1000);
+        }
+
+        // UI Functions
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(sectionId).classList.remove('hidden');
+        }
+
+        function cancelMatchmaking() {
+            socket.close();
+            location.reload();
+        }
+
+        function leaveBattle() {
+            if (confirm('Are you sure you want to leave the battle?')) {
+                socket.close();
+                location.reload();
+            }
+        }
+
+        function requestHint() {
+            alert('Hint feature coming soon!');
+        }
+    </script>
+</body>
+</html>

@@ -10,12 +10,11 @@ class AIOpponent:
             "Hard": {"min_delay": 1, "max_delay": 4, "error_chance": 0.1},
             "Expert": {"min_delay": 0.5, "max_delay": 2, "error_chance": 0.05}
         }
-        self.ai_cells = set()  # Theo dõi ô AI đã đi
+        self.ai_cells = set()  
         self.correct_moves = 0
         self.wrong_moves = 0
         
     def get_available_cells(self, current_board):
-        """Lấy danh sách ô trống mà AI có thể đi"""
         available = []
         for i in range(9):
             for j in range(9):
@@ -24,7 +23,6 @@ class AIOpponent:
         return available
         
     def make_move(self, current_board, solution):
-        """AI thực hiện nước đi - phiên bản real-time"""
         available_cells = self.get_available_cells(current_board)
         if not available_cells:
             return None, None, None, False
@@ -33,7 +31,7 @@ class AIOpponent:
         row, col = random.choice(available_cells)
         correct_value = solution[row][col]
         
-        # Có thể đi sai theo độ khó
+        # đi sai theo độ khó
         if random.random() < self.speed_settings[self.difficulty]["error_chance"]:
             wrong_values = [num for num in range(1, 10) if num != correct_value]
             if wrong_values:

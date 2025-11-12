@@ -9,7 +9,7 @@ from urllib.request import urlopen
 import json
 import pygame
 
-# Import new modules
+# Import các module mới
 from database import DatabaseManager
 from audio_manager import AudioManager
 from ai_opponent import AIOpponent
@@ -116,49 +116,6 @@ def count_solutions(board, count=0):
                 return count
     return count + 1
 
-# =================== Multiplayer Manager ===================
-class MultiplayerManager:
-    def __init__(self, base_url="http://localhost:8000"):
-        self.base_url = base_url
-        self.current_room = None
-        self.is_connected = False
-        
-    def create_private_room(self, player_name, difficulty="Medium", room_name=""):
-        """Create private room"""
-        try:
-            # Mock response - will connect to Django later
-            room_id = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=6))
-            
-            self.current_room = {
-                'room_id': room_id,
-                'room_name': room_name or f"{player_name}'s Room",
-                'player_name': player_name,
-                'difficulty': difficulty,
-                'is_host': True,
-                'status': 'waiting'
-            }
-            
-            return room_id
-        except Exception as e:
-            print(f"Error creating room: {e}")
-            return None
-            
-    def join_private_room(self, room_id, player_name):
-        """Join private room"""
-        try:
-            # Mock response
-            self.current_room = {
-                'room_id': room_id,
-                'player_name': player_name,
-                'is_host': False,
-                'status': 'joined'
-            }
-            
-            return True
-        except Exception as e:
-            print(f"Error joining room: {e}")
-            return False
-
 # =================== SudokuApp ===================
 class SudokuApp(ctk.CTk):
     KITTY_IMAGE_FILE = "hello_kitty_sticker.png"
@@ -198,15 +155,12 @@ class SudokuApp(ctk.CTk):
         self.config(bg=KITTY_BG)
         ctk.set_appearance_mode("light")
 
-        # Initialize new managers
+        # Khởi tạo các manager mới
         self.db = DatabaseManager()
         self.audio_manager = AudioManager()
-        self.audio_manager.load_sounds()  # Load sounds
+        self.audio_manager.load_sounds()  # Tải âm thanh
         
-        # ADD: Multiplayer manager
-        self.multiplayer_manager = MultiplayerManager()
-        
-        # New state variables
+        # Biến trạng thái mới
         self.current_user = None
         self.user_id = None
         self.game_mode = "single"  # single, ai_battle, multiplayer
@@ -214,7 +168,7 @@ class SudokuApp(ctk.CTk):
         self.ai_score = 0
         self.player_score = 0
 
-        # Original variables
+        # Biến gốc
         self.board = None
         self.cells = []
         self.solution = None
@@ -240,23 +194,15 @@ class SudokuApp(ctk.CTk):
         self.numpad_clear_btn = None
         self.timer_label = None
 
-        # ADD VARIABLES FOR AI BATTLE
+        # THÊM BIẾN CHO ĐẤU MÁY
         self.ai_timer_id = None
         self.ai_moves = 0
         self.ai_correct_moves = 0
         self.ai_wrong_moves = 0
-        self.battle_time_limit = 300  # 5 minutes
+        self.battle_time_limit = 300  # 5 phút
         self.player_score_label = None
         self.ai_score_label = None
         self.battle_timer_label = None
-
-        # ADD VARIABLES FOR MULTIPLAYER
-        self.multiplayer_timer_label = None
-        self.opponent_score_label = None
-        self.player_progress = None
-        self.opponent_progress = None
-        self.moves_text = None
-        self.opponent_name_label = None
 
         self.load_all_stickers()
         self.show_main_menu()
@@ -318,7 +264,7 @@ class SudokuApp(ctk.CTk):
         if self.is_paused:
             self.audio_manager.play_sound('pause')
             self.stop_timer()
-            # ADD: Stop AI timer
+            # THÊM: Dừng AI timer
             if self.ai_timer_id:
                 self.after_cancel(self.ai_timer_id)
             self.pause_button.configure(text="▶️ Resume")
@@ -340,7 +286,7 @@ class SudokuApp(ctk.CTk):
             self.enable_numpad(True)
             if self.hint_button and self.hint_count > 0:
                 self.hint_button.configure(state="normal")
-            # ADD: Restart AI timer if in AI battle
+            # THÊM: Khởi động lại AI timer nếu là đấu máy
             if self.game_mode == "ai_battle" and not self.ai_timer_id:
                 self.start_ai_turn()
             self.hide_pause_overlay()
@@ -449,7 +395,7 @@ class SudokuApp(ctk.CTk):
         
         self.after(2000, lambda: popup.destroy() if popup.winfo_exists() else None)
 
-    # =================== NEW MAIN MENU ===================
+    # =================== MENU CHÍNH MỚI ===================
     def show_main_menu(self):
         self.clear_screen()
         self.configure(fg_color=KITTY_BG)
@@ -475,12 +421,12 @@ class SudokuApp(ctk.CTk):
         title.pack(pady=(30, 10))
 
         subtitle = ctk.CTkLabel(
-            main_frame, text="Group 10", font=("Comic Sans MS", max(14, int(title_font_size * 0.45))),
+            main_frame, text="Nhóm 10", font=("Comic Sans MS", max(14, int(title_font_size * 0.45))),
             text_color=KITTY_TEXT
         )
         subtitle.pack(pady=(0, 20))
 
-        # Show user info if logged in
+        # Hiển thị thông tin user nếu đã đăng nhập
         if self.current_user:
             user_label = ctk.CTkLabel(
                 main_frame, text=f"👤 {self.current_user}",
@@ -504,7 +450,7 @@ class SudokuApp(ctk.CTk):
         )
         play_button.pack(pady=(20, 15), padx=20)
 
-        # Login/Register button
+        # Nút đăng nhập/đăng ký
         if not self.current_user:
             auth_button = ctk.CTkButton(
                 main_frame, text="🔐 Login/Register", fg_color=KITTY_PURPLE_HOVER,
@@ -526,7 +472,7 @@ class SudokuApp(ctk.CTk):
             )
             logout_button.pack(pady=(0, 10))
 
-        # Sound settings button
+        # Nút cài đặt âm thanh
         sound_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         sound_frame.pack(pady=(0, 10))
         
@@ -558,16 +504,16 @@ class SudokuApp(ctk.CTk):
 
     def toggle_music(self):
         enabled = self.audio_manager.toggle_music()
-        self.show_main_menu()  # Refresh to update button
+        self.show_main_menu()  # Refresh để cập nhật nút
 
     def toggle_sound(self):
         enabled = self.audio_manager.toggle_sound()
-        self.show_main_menu()  # Refresh to update button
+        self.show_main_menu()  # Refresh để cập nhật nút
 
     def show_login_register(self):
-        """Show login/register window"""
+        """Hiển thị cửa sổ đăng nhập/đăng ký"""
         login_window = ctk.CTkToplevel(self)
-        login_window.title("Login / Register")
+        login_window.title("Đăng nhập / Đăng ký")
         login_window.geometry("400x500")
         login_window.resizable(False, False)
         login_window.transient(self)
@@ -582,21 +528,21 @@ class SudokuApp(ctk.CTk):
         tab_view = ctk.CTkTabview(login_window)
         tab_view.pack(expand=True, fill="both", padx=20, pady=20)
         
-        # Login tab
-        login_tab = tab_view.add("Login")
+        # Tab đăng nhập
+        login_tab = tab_view.add("Đăng nhập")
         self.create_login_form(login_tab, login_window)
         
-        # Register tab
-        register_tab = tab_view.add("Register")
+        # Tab đăng ký
+        register_tab = tab_view.add("Đăng ký")
         self.create_register_form(register_tab, login_window)
 
     def create_login_form(self, parent, window):
-        ctk.CTkLabel(parent, text="Username:", 
+        ctk.CTkLabel(parent, text="Tên đăng nhập:", 
                     font=("Arial", 14)).pack(pady=10)
         username_entry = ctk.CTkEntry(parent, width=200)
         username_entry.pack(pady=5)
         
-        ctk.CTkLabel(parent, text="Password:", 
+        ctk.CTkLabel(parent, text="Mật khẩu:", 
                     font=("Arial", 14)).pack(pady=10)
         password_entry = ctk.CTkEntry(parent, show="*", width=200)
         password_entry.pack(pady=5)
@@ -606,35 +552,35 @@ class SudokuApp(ctk.CTk):
             password = password_entry.get().strip()
             
             if not username or not password:
-                messagebox.showerror("Error", "Please fill in all fields!")
+                messagebox.showerror("Lỗi", "Vui lòng điền đầy đủ thông tin!")
                 return
                 
             success, result = self.db.login_user(username, password)
             if success:
                 self.current_user = username
                 self.user_id = result
-                messagebox.showinfo("Success", "Login successful!")
+                messagebox.showinfo("Thành công", "Đăng nhập thành công!")
                 window.destroy()
                 self.show_main_menu()
             else:
-                messagebox.showerror("Error", result)
+                messagebox.showerror("Lỗi", result)
     
-        login_btn = ctk.CTkButton(parent, text="Login", 
+        login_btn = ctk.CTkButton(parent, text="Đăng nhập", 
                                  command=login, width=200)
         login_btn.pack(pady=20)
 
     def create_register_form(self, parent, window):
-        ctk.CTkLabel(parent, text="Username:", 
+        ctk.CTkLabel(parent, text="Tên đăng nhập:", 
                     font=("Arial", 14)).pack(pady=10)
         username_entry = ctk.CTkEntry(parent, width=200)
         username_entry.pack(pady=5)
         
-        ctk.CTkLabel(parent, text="Password:", 
+        ctk.CTkLabel(parent, text="Mật khẩu:", 
                     font=("Arial", 14)).pack(pady=10)
         password_entry = ctk.CTkEntry(parent, show="*", width=200)
         password_entry.pack(pady=5)
         
-        ctk.CTkLabel(parent, text="Confirm Password:", 
+        ctk.CTkLabel(parent, text="Xác nhận mật khẩu:", 
                     font=("Arial", 14)).pack(pady=10)
         confirm_password_entry = ctk.CTkEntry(parent, show="*", width=200)
         confirm_password_entry.pack(pady=5)
@@ -645,17 +591,17 @@ class SudokuApp(ctk.CTk):
             confirm_password = confirm_password_entry.get().strip()
             
             if not username or not password:
-                messagebox.showerror("Error", "Please fill in all fields!")
+                messagebox.showerror("Lỗi", "Vui lòng điền đầy đủ thông tin!")
                 return
                 
             if password != confirm_password:
-                messagebox.showerror("Error", "Passwords do not match!")
+                messagebox.showerror("Lỗi", "Mật khẩu xác nhận không khớp!")
                 return
                 
             success, message = self.db.register_user(username, password)
             if success:
-                messagebox.showinfo("Success", message)
-                # Auto login after registration
+                messagebox.showinfo("Thành công", message)
+                # Tự động đăng nhập sau khi đăng ký
                 self.current_user = username
                 success, result = self.db.login_user(username, password)
                 if success:
@@ -663,20 +609,20 @@ class SudokuApp(ctk.CTk):
                 window.destroy()
                 self.show_main_menu()
             else:
-                messagebox.showerror("Error", message)
+                messagebox.showerror("Lỗi", message)
     
-        register_btn = ctk.CTkButton(parent, text="Register", 
+        register_btn = ctk.CTkButton(parent, text="Đăng ký", 
                                     command=register, width=200)
         register_btn.pack(pady=20)
 
     def logout(self):
-        """Logout"""
+        """Đăng xuất"""
         self.current_user = None
         self.user_id = None
         self.show_main_menu()
 
     def show_game_mode_selection(self):
-        """Show game mode selection screen"""
+        """Hiển thị màn hình chọn chế độ chơi"""
         self.clear_screen()
         
         main_frame = ctk.CTkFrame(
@@ -691,11 +637,11 @@ class SudokuApp(ctk.CTk):
         )
         title.pack(pady=(30, 20))
 
-        # Game modes
+        # Các chế độ chơi
         modes = [
             ("🌸 Single Player", self.show_level_selection),
             ("🤖 AI Battle", self.show_ai_battle_menu),
-            ("👥 Multiplayer", self.show_multiplayer_menu),
+            ("👥  Multiplayer", self.show_multiplayer_menu),
             ("🏆 Leaderboard", self.show_leaderboard)
         ]
 
@@ -719,7 +665,7 @@ class SudokuApp(ctk.CTk):
         back_btn.pack(pady=20)
 
     def show_ai_battle_menu(self):
-        """Show AI battle menu"""
+        """Hiển thị menu đấu với AI"""
         if not self.current_user:
             self.show_login_register()
             return
@@ -732,7 +678,7 @@ class SudokuApp(ctk.CTk):
         main_frame.pack(expand=True, padx=40, pady=40)
         
         ctk.CTkLabel(
-            main_frame, text="🤖 AI Challenge Mode",
+            main_frame, text="🤖 Challange Mode AI",
             font=("Arial Black", 24, "bold")
         ).pack(pady=20)
         
@@ -757,577 +703,53 @@ class SudokuApp(ctk.CTk):
         ).pack(pady=20)
 
     def start_ai_game(self, ai_level):
-        """Start AI battle game"""
+        """Bắt đầu game đấu với AI"""
         self.ai_opponent = AIOpponent(ai_level)
         self.game_mode = "ai_battle"
         self.ai_score = 0
         self.player_score = 0
-        self.current_difficulty = "Medium"  # Board difficulty
+        self.current_difficulty = "Medium"  # Độ khó bàn chơi
         self.show_game()
 
-    # =================== MULTIPLAYER MENU ===================
     def show_multiplayer_menu(self):
-        """Show multiplayer menu (REPLACES OLD METHOD)"""
+        """Hiển thị menu multiplayer"""
         if not self.current_user:
-            messagebox.showinfo("Login Required", "Please login to play multiplayer!")
             self.show_login_register()
             return
             
         self.clear_screen()
         
-        # Main multiplayer frame
         main_frame = ctk.CTkFrame(
-            self, 
-            fg_color=KITTY_ACCENT_PINK, 
-            corner_radius=20,
-            border_width=5, 
-            border_color=KITTY_MAIN_PINK
+            self, fg_color=KITTY_ACCENT_PINK, corner_radius=20
         )
-        main_frame.pack(expand=True, fill="both", padx=40, pady=40)
+        main_frame.pack(expand=True, padx=40, pady=40)
         
-        # Title
-        title = ctk.CTkLabel(
+        ctk.CTkLabel(
+            main_frame, text="👥 Đấu Online",
+            font=("Arial Black", 24, "bold")
+        ).pack(pady=20)
+        
+        # Thông báo tính năng đang phát triển
+        ctk.CTkLabel(
             main_frame, 
-            text="👥 SUDOKU MULTIPLAYER BATTLE 👥",
-            font=("Arial Black", 24, "bold"), 
-            text_color=KITTY_MAIN_PINK
-        )
-        title.pack(pady=(30, 20))
-        
-        # Description
-        desc = ctk.CTkLabel(
-            main_frame,
-            text="🎀 Race to solve the same Sudoku board! 🎀\nFaster player with higher score wins!",
-            font=("Comic Sans MS", 14),
-            text_color=KITTY_TEXT
-        )
-        desc.pack(pady=(0, 30))
-        
-        # Room creation section
-        room_frame = ctk.CTkFrame(main_frame, fg_color="#FFF8F8", corner_radius=15)
-        room_frame.pack(fill="x", padx=20, pady=10)
-        
-        ctk.CTkLabel(
-            room_frame,
-            text="🏠 Create Private Room",
-            font=("Arial Black", 16, "bold"),
-            text_color=KITTY_MAIN_PINK
-        ).pack(pady=(10, 5))
-        
-        # Room name input
-        name_frame = ctk.CTkFrame(room_frame, fg_color="transparent")
-        name_frame.pack(pady=5)
-        
-        ctk.CTkLabel(name_frame, text="Room name:", font=("Arial", 12)).pack(side="left", padx=5)
-        
-        self.room_name_entry = ctk.CTkEntry(name_frame, width=150, placeholder_text="Enter room name...")
-        self.room_name_entry.pack(side="left", padx=5)
-        
-        # Difficulty selection
-        diff_frame = ctk.CTkFrame(room_frame, fg_color="transparent")
-        diff_frame.pack(pady=5)
-        
-        ctk.CTkLabel(diff_frame, text="Difficulty:", font=("Arial", 12)).pack(side="left", padx=5)
-        
-        self.difficulty_var = ctk.StringVar(value="Medium")
-        difficulty_combo = ctk.CTkComboBox(
-            diff_frame,
-            values=["Easy", "Medium", "Hard", "Expert"],
-            variable=self.difficulty_var,
-            width=120
-        )
-        difficulty_combo.pack(side="left", padx=5)
-        
-        def create_room():
-            room_name = self.room_name_entry.get().strip()
-            if not room_name:
-                room_name = f"{self.current_user}'s Room"
-                
-            difficulty = self.difficulty_var.get()
-            
-            # Create room through multiplayer manager
-            room_id = self.multiplayer_manager.create_private_room(
-                self.current_user,
-                difficulty,
-                room_name
-            )
-            
-            if room_id:
-                self.show_waiting_room(room_id, True, room_name, difficulty)
-            else:
-                messagebox.showerror("Error", "Cannot create room!")
-        
-        create_btn = ctk.CTkButton(
-            room_frame,
-            text="🎀 Create Room Now",
-            fg_color=KITTY_MAIN_PINK,
-            hover_color=KITTY_PURPLE_HOVER,
-            font=("Arial Black", 14, "bold"),
-            command=create_room
-        )
-        create_btn.pack(pady=10)
-        
-        # Room joining section  
-        join_frame = ctk.CTkFrame(main_frame, fg_color="#FFF8F8", corner_radius=15)
-        join_frame.pack(fill="x", padx=20, pady=10)
-        
-        ctk.CTkLabel(
-            join_frame,
-            text="🔑 Join Room",
-            font=("Arial Black", 16, "bold"),
-            text_color=KITTY_MAIN_PINK
-        ).pack(pady=(10, 5))
-        
-        # Room code input
-        code_frame = ctk.CTkFrame(join_frame, fg_color="transparent")
-        code_frame.pack(pady=5)
-        
-        ctk.CTkLabel(code_frame, text="Room code:", font=("Arial", 12)).pack(side="left", padx=5)
-        
-        self.room_code_entry = ctk.CTkEntry(code_frame, width=120, placeholder_text="Enter room code...")
-        self.room_code_entry.pack(side="left", padx=5)
-        
-        def join_room():
-            room_code = self.room_code_entry.get().strip()
-            if not room_code:
-                messagebox.showwarning("Warning", "Please enter room code!")
-                return
-                
-            success = self.multiplayer_manager.join_private_room(room_code, self.current_user)
-            
-            if success:
-                self.show_waiting_room(room_code, False, "Opponent's Room", "Medium")
-            else:
-                messagebox.showerror("Error", "Cannot join room!")
-        
-        join_btn = ctk.CTkButton(
-            join_frame,
-            text="🎯 Join Room", 
-            fg_color=KITTY_MAIN_PINK,
-            hover_color=KITTY_PURPLE_HOVER,
-            font=("Arial Black", 14, "bold"),
-            command=join_room
-        )
-        join_btn.pack(pady=10)
-        
-        # Back button
-        back_btn = ctk.CTkButton(
-            main_frame,
-            text="🔙 Back to Menu",
-            fg_color="#CC0000",
-            hover_color="#AA0000",
-            font=("Arial Black", 14, "bold"),
-            command=self.show_game_mode_selection
-        )
-        back_btn.pack(pady=20)
-
-    def show_waiting_room(self, room_id, is_host, room_name, difficulty):
-        """Show waiting room"""
-        self.clear_screen()
-        
-        # Main waiting frame
-        wait_frame = ctk.CTkFrame(
-            self,
-            fg_color=KITTY_ACCENT_PINK,
-            corner_radius=20
-        )
-        wait_frame.pack(expand=True, fill="both", padx=40, pady=40)
-        
-        # Title
-        title = ctk.CTkLabel(
-            wait_frame,
-            text="⏳ WAITING FOR OPPONENT ⏳",
-            font=("Arial Black", 24, "bold"),
-            text_color=KITTY_MAIN_PINK
-        )
-        title.pack(pady=(30, 10))
-        
-        # Room info
-        room_info = ctk.CTkLabel(
-            wait_frame,
-            text=f"Room: {room_name} | Code: {room_id}",
-            font=("Arial Black", 16, "bold"),
-            text_color=KITTY_TEXT
-        )
-        room_info.pack(pady=10)
-        
-        # Player list
-        players_frame = ctk.CTkFrame(wait_frame, fg_color="#FFF8F8", corner_radius=15)
-        players_frame.pack(pady=20, padx=50, fill="x")
-        
-        ctk.CTkLabel(
-            players_frame,
-            text="🎮 Players in room:",
-            font=("Arial Black", 16, "bold"),
-            text_color=KITTY_MAIN_PINK
-        ).pack(pady=(15, 10))
-        
-        # Host player
-        host_frame = ctk.CTkFrame(players_frame, fg_color="transparent")
-        host_frame.pack(fill="x", padx=20, pady=5)
-        
-        ctk.CTkLabel(
-            host_frame,
-            text="👑 " + self.current_user,
-            font=("Arial", 14, "bold"),
-            text_color=KITTY_MAIN_PINK
-        ).pack(side="left")
-        
-        ctk.CTkLabel(
-            host_frame,
-            text="(Room Host)" if is_host else "(Player)",
-            font=("Arial", 12),
-            text_color=KITTY_TEXT
-        ).pack(side="left", padx=10)
-        
-        # Waiting for opponent
-        opp_frame = ctk.CTkFrame(players_frame, fg_color="transparent")
-        opp_frame.pack(fill="x", padx=20, pady=5)
-        
-        ctk.CTkLabel(
-            opp_frame,
-            text="⏰ Waiting for opponent...",
+            text="Tính năng đang phát triển!\nSẽ có trong phiên bản tiếp theo.",
             font=("Arial", 14),
             text_color=KITTY_TEXT
-        ).pack(side="left")
+        ).pack(pady=20)
         
-        # Share room code (host only)
-        if is_host:
-            share_frame = ctk.CTkFrame(wait_frame, fg_color="transparent")
-            share_frame.pack(pady=10)
-            
-            ctk.CTkLabel(share_frame, text="Share room code:", font=("Arial", 12)).pack(side="left", padx=5)
-            
-            code_label = ctk.CTkLabel(
-                share_frame,
-                text=room_id,
-                font=("Arial Black", 16, "bold"),
-                text_color=KITTY_MAIN_PINK
-            )
-            code_label.pack(side="left", padx=5)
-            
-            def copy_code():
-                self.clipboard_clear()
-                self.clipboard_append(room_id)
-                messagebox.showinfo("Success", "Room code copied!")
-                
-            copy_btn = ctk.CTkButton(
-                share_frame,
-                text="📋 Copy",
-                fg_color=KITTY_MAIN_PINK,
-                command=copy_code
-            )
-            copy_btn.pack(side="left", padx=5)
-        
-        # Start game button (host only)
-        if is_host:
-            def start_game():
-                self.start_multiplayer_game(room_id, room_name, difficulty, is_host)
-                
-            start_btn = ctk.CTkButton(
-                wait_frame,
-                text="🎮 Start Game",
-                fg_color=KITTY_MAIN_PINK,
-                hover_color=KITTY_PURPLE_HOVER,
-                font=("Arial Black", 16, "bold"),
-                command=start_game
-            )
-            start_btn.pack(pady=20)
-        
-        # Cancel button
-        def cancel_room():
-            self.show_multiplayer_menu()
-            
-        cancel_btn = ctk.CTkButton(
-            wait_frame,
-            text="❌ Cancel",
-            fg_color="#CC0000",
-            command=cancel_room
-        )
-        cancel_btn.pack(pady=10)
-
-    def start_multiplayer_game(self, room_id, room_name, difficulty, is_host):
-        """Start multiplayer game"""
-        self.current_difficulty = difficulty
-        self.game_mode = "multiplayer"
-        
-        # Create board for multiplayer (both players play same board)
-        self.board = generate_board(difficulty)
-        self.initial_board = [row[:] for row in self.board]
-        self.solution = [row[:] for row in self.board]
-        solve_board(self.solution)
-        
-        # Show game with multiplayer UI
-        self.show_multiplayer_game_ui(room_id, room_name, is_host)
-
-    def show_multiplayer_game_ui(self, room_id, room_name, is_host):
-        """Show multiplayer game UI"""
-        self.clear_screen()
-        self.configure(fg_color=KITTY_BG)
-        
-        # Main container
-        main_container = ctk.CTkFrame(self, fg_color=KITTY_BG)
-        main_container.pack(expand=True, fill="both", padx=10, pady=10)
-        
-        # Header with battle info
-        header_frame = ctk.CTkFrame(main_container, fg_color=KITTY_ACCENT_PINK, corner_radius=15)
-        header_frame.pack(fill="x", pady=(0, 10))
-        
-        # Room info
-        room_label = ctk.CTkLabel(
-            header_frame,
-            text=f"🎀 Room: {room_name}",
-            font=("Arial Black", 16, "bold"),
-            text_color=KITTY_MAIN_PINK
-        )
-        room_label.pack(side="left", padx=15, pady=10)
-        
-        # Timer
-        self.multiplayer_timer_label = ctk.CTkLabel(
-            header_frame,
-            text="⏰ 10:00",
-            font=("Arial Black", 16, "bold"),
-            text_color=KITTY_TEXT
-        )
-        self.multiplayer_timer_label.pack(side="right", padx=15, pady=10)
-        
-        # Battle info
-        battle_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
-        battle_frame.pack(expand=True, fill="x")
-        
-        # Player score
-        self.player_score_label = ctk.CTkLabel(
-            battle_frame,
-            text=f"👤 {self.current_user}: 0 ⭐",
-            font=("Arial Black", 14, "bold"),
-            text_color=KITTY_MAIN_PINK
-        )
-        self.player_score_label.pack(side="left", padx=20)
-        
-        # VS
-        vs_label = ctk.CTkLabel(
-            battle_frame,
-            text="⚡ VS ⚡", 
-            font=("Arial Black", 12, "bold"),
-            text_color=KITTY_TEXT
-        )
-        vs_label.pack(side="left", padx=10)
-        
-        # Opponent score
-        self.opponent_score_label = ctk.CTkLabel(
-            battle_frame,
-            text=f"🎯 Opponent: 0 ⭐",
-            font=("Arial Black", 14, "bold"),
-            text_color="#666666"
-        )
-        self.opponent_score_label.pack(side="left", padx=20)
-        
-        # Main content
-        content_frame = ctk.CTkFrame(main_container, fg_color="transparent")
-        content_frame.pack(expand=True, fill="both", pady=10)
-        
-        # Left: Sudoku board
-        left_frame = ctk.CTkFrame(content_frame, fg_color="transparent")
-        left_frame.pack(side="left", fill="both", expand=True)
-        
-        # Create Sudoku board as normal
-        self.create_sudoku_board_multiplayer(left_frame)
-        
-        # Right: Opponent panel
-        right_frame = ctk.CTkFrame(content_frame, fg_color=KITTY_ACCENT_PINK, corner_radius=15, width=300)
-        right_frame.pack(side="right", fill="y", padx=(10, 0))
-        right_frame.pack_propagate(False)
-        
-        # Opponent info
-        ctk.CTkLabel(
-            right_frame,
-            text="🎮 BATTLE INFO",
-            font=("Arial Black", 16, "bold"),
-            text_color=KITTY_MAIN_PINK
-        ).pack(pady=(20, 10))
-        
-        # Opponent details
-        opp_info_frame = ctk.CTkFrame(right_frame, fg_color="#FFF8F8", corner_radius=10)
-        opp_info_frame.pack(fill="x", padx=15, pady=10)
-        
-        ctk.CTkLabel(opp_info_frame, text="Opponent:", font=("Arial", 12, "bold")).pack(pady=(10, 5))
-        
-        self.opponent_name_label = ctk.CTkLabel(
-            opp_info_frame,
-            text="Waiting..." if is_host else "Room Host",
-            font=("Arial Black", 14),
-            text_color=KITTY_MAIN_PINK
-        )
-        self.opponent_name_label.pack(pady=5)
-        
-        # Progress bars
-        progress_frame = ctk.CTkFrame(right_frame, fg_color="transparent")
-        progress_frame.pack(fill="x", padx=15, pady=10)
-        
-        ctk.CTkLabel(progress_frame, text="Your progress:", font=("Arial", 11)).pack(anchor="w")
-        self.player_progress = ctk.CTkProgressBar(progress_frame)
-        self.player_progress.pack(fill="x", pady=(5, 10))
-        self.player_progress.set(0)
-        
-        ctk.CTkLabel(progress_frame, text="Opponent progress:", font=("Arial", 11)).pack(anchor="w")
-        self.opponent_progress = ctk.CTkProgressBar(progress_frame)
-        self.opponent_progress.pack(fill="x", pady=(5, 0))
-        self.opponent_progress.set(0)
-        
-        # Recent moves
-        moves_frame = ctk.CTkFrame(right_frame, fg_color="#FFF8F8", corner_radius=10)
-        moves_frame.pack(fill="both", expand=True, padx=15, pady=10)
-        
-        ctk.CTkLabel(
-            moves_frame,
-            text="📊 RECENT MOVES",
-            font=("Arial Black", 12, "bold"),
-            text_color=KITTY_MAIN_PINK
-        ).pack(pady=(10, 5))
-        
-        self.moves_text = ctk.CTkTextbox(moves_frame, width=250, height=120, font=("Arial", 10))
-        self.moves_text.pack(fill="both", expand=True, padx=10, pady=5)
-        self.moves_text.configure(state="disabled")
-        
-        # Quick chat
-        chat_frame = ctk.CTkFrame(right_frame, fg_color="#FFF8F8", corner_radius=10)
-        chat_frame.pack(fill="x", padx=15, pady=10)
-        
-        ctk.CTkLabel(
-            chat_frame,
-            text="💬 QUICK CHAT",
-            font=("Arial Black", 12, "bold"),
-            text_color=KITTY_MAIN_PINK
-        ).pack(pady=(10, 5))
-        
-        chat_buttons = ["GG! 👍", "Too fast! ⚡", "Good luck! 💪", "Nice! 🌟"]
-        
-        for msg in chat_buttons:
-            btn = ctk.CTkButton(
-                chat_frame,
-                text=msg,
-                fg_color=KITTY_MAIN_PINK,
-                hover_color=KITTY_PURPLE_HOVER,
-                font=("Arial", 10),
-                command=lambda m=msg: self.add_move_to_chat(f"You: {m}"),
-                height=25
-            )
-            btn.pack(pady=2, padx=10, fill="x")
-        
-        # Footer controls
-        footer_frame = ctk.CTkFrame(main_container, fg_color="transparent")
-        footer_frame.pack(fill="x", pady=10)
-        
-        # Control buttons
-        controls = [
-            ("⏸️ Pause", self.toggle_pause, KITTY_MAIN_PINK),
-            ("💡 Hint", self.handle_hint, KITTY_MAIN_PINK),
-            ("🏃 Leave", self.leave_multiplayer_game, "#CC0000")
-        ]
-        
-        for text, command, color in controls:
-            btn = ctk.CTkButton(
-                footer_frame,
-                text=text,
-                fg_color=color,
-                hover_color=KITTY_PURPLE_HOVER if color == KITTY_MAIN_PINK else "#AA0000",
-                font=("Arial Black", 12, "bold"),
-                command=command
-            )
-            btn.pack(side="left", padx=10)
-        
-        # Start timer
-        self.time_elapsed = 0
-        self.update_timer()
-        
-        # Mock: Simulate opponent joining after 5 seconds
-        if is_host:
-            self.after(5000, self.mock_opponent_join)
-
-    def create_sudoku_board_multiplayer(self, parent):
-        """Create Sudoku board for multiplayer"""
-        sudoku_container = ctk.CTkFrame(parent, fg_color=KITTY_MAIN_PINK, corner_radius=15)
-        sudoku_container.pack(expand=True, fill="both", padx=10, pady=10)
-        
-        grid_frame = ctk.CTkFrame(sudoku_container, fg_color=KITTY_BG, corner_radius=10)
-        grid_frame.pack(padx=6, pady=6)
-        
-        self.cells = []
-        for i in range(9):
-            row_cells = []
-            row_block_frame = ctk.CTkFrame(grid_frame, fg_color="transparent")
-            row_block_frame.grid(row=i, column=0, columnspan=9, sticky="ew")
-            row_block_frame.grid_columnconfigure(tuple(range(9)), weight=1)
-            row_block_frame.grid_rowconfigure(0, weight=1)
-            
-            for j in range(9):
-                value = self.initial_board[i][j]
-                block_color = KITTY_BG if (i // 3 + j // 3) % 2 == 0 else KITTY_BG_ALT
-                
-                entry = ctk.CTkEntry(
-                    row_block_frame,
-                    width=self.cell_size,
-                    height=self.cell_size,
-                    justify="center",
-                    font=("Comic Sans MS", self.font_size, "bold"),
-                    fg_color=block_color if value == 0 else KITTY_ACCENT_PINK,
-                    text_color="#000000" if value == 0 else KITTY_TEXT,
-                    border_width=1,
-                    corner_radius=5,
-                    border_color=KITTY_MAIN_PINK if (j + 1) % 3 == 0 and j != 8 else KITTY_ACCENT_PINK
-                )
-                
-                entry.grid(row=0, column=j, padx=(1, 1), pady=1)
-                
-                if value != 0:
-                    entry.insert(0, str(value))
-                    entry.configure(state="disabled", text_color=KITTY_MAIN_PINK)
-                    self.cell_colors[(i, j)] = KITTY_ACCENT_PINK
-                else:
-                    entry.bind("<KeyRelease>", lambda e, r=i, c=j: self.validate_input(r, c))
-                    entry.bind("<Button-1>", lambda e, r=i, c=j: self.select_cell(r, c))
-                    entry.configure(text_color="#000000")
-                    self.cell_colors[(i, j)] = block_color
-                    
-                row_cells.append(entry)
-                
-            row_block_frame.grid(row=i, column=0, columnspan=9, sticky="ew", pady=(3 if i % 3 == 0 and i != 0 else 1, 1))
-            self.cells.append(row_cells)
-
-    def add_move_to_chat(self, message):
-        """Add message to chat"""
-        self.moves_text.configure(state="normal")
-        self.moves_text.insert("end", message + "\n")
-        self.moves_text.see("end")
-        self.moves_text.configure(state="disabled")
-
-    def mock_opponent_join(self):
-        """Mock opponent joining (temporary)"""
-        self.opponent_name_label.configure(text="Player2")
-        self.add_move_to_chat("🤖 Player2 joined the room!")
-        
-        # Mock opponent moves
-        self.after(3000, self.mock_opponent_move)
-
-    def mock_opponent_move(self):
-        """Mock opponent move"""
-        self.add_move_to_chat("🎯 Player2: Placed 5 at (1,1)")
-        self.opponent_score_label.configure(text="🎯 Player2: 50 ⭐")
-        self.opponent_progress.set(0.3)
-
-    def leave_multiplayer_game(self):
-        """Leave multiplayer game"""
-        if messagebox.askyesno("Confirm", "Are you sure you want to leave the game?"):
-            self.show_game_mode_selection()
+        ctk.CTkButton(
+            main_frame, text="🔙 Back", 
+            command=self.show_game_mode_selection
+        ).pack(pady=20)
 
     def show_leaderboard(self):
-        """Show leaderboard"""
+        """Hiển thị bảng xếp hạng"""
         self.clear_screen()
         
         tab_view = ctk.CTkTabview(self)
         tab_view.pack(expand=True, fill="both", padx=20, pady=20)
         
-        levels = ["Easy", "Medium", "Hard", "Expert", "Overall"]
+        levels = ["Easy", "Medium", "Hard", "Expert", "Tổng hợp"]
         
         for level in levels:
             tab_view.add(level)
@@ -1335,17 +757,17 @@ class SudokuApp(ctk.CTk):
         for level in levels:
             frame = tab_view.tab(level)
             
-            # Get data from database
-            if level == "Overall":
+            # Lấy dữ liệu từ database
+            if level == "Tổng hợp":
                 leaderboard_data = self.db.get_leaderboard(limit=10)
             else:
                 leaderboard_data = self.db.get_leaderboard(level, 10)
             
-            # Display leaderboard
+            # Hiển thị bảng xếp hạng
             if not leaderboard_data:
                 ctk.CTkLabel(
                     frame, 
-                    text="No data yet!",
+                    text="Chưa có dữ liệu!",
                     font=("Arial", 16),
                     text_color=KITTY_TEXT
                 ).pack(pady=50)
@@ -1360,34 +782,34 @@ class SudokuApp(ctk.CTk):
         ).pack(pady=10)
 
     def create_leaderboard_row(self, parent, player, rank):
-        """Create a row in leaderboard"""
+        """Tạo một dòng trong bảng xếp hạng"""
         rank_color = "#FFD700" if rank == 0 else "#C0C0C0" if rank == 1 else "#CD7F32" if rank == 2 else KITTY_TEXT
         
         row_frame = ctk.CTkFrame(parent, fg_color="transparent")
         row_frame.pack(fill="x", padx=10, pady=2)
         
-        # Rank
+        # Xếp hạng
         ctk.CTkLabel(
             row_frame, text=f"{rank + 1}.",
             text_color=rank_color, font=("Arial", 14, "bold"),
             width=30
         ).pack(side="left")
         
-        # Player name
+        # Tên người chơi
         ctk.CTkLabel(
             row_frame, text=player['username'],
             text_color=rank_color, font=("Arial", 14),
             width=150
         ).pack(side="left", padx=5)
         
-        # Score
+        # Điểm số
         ctk.CTkLabel(
             row_frame, text=f"{player['score']} pts",
             text_color=rank_color, font=("Arial", 14, "bold"),
             width=80
         ).pack(side="left", padx=5)
         
-        # Win rate (if available)
+        # Tỷ lệ thắng (nếu có)
         if 'win_rate' in player:
             ctk.CTkLabel(
                 row_frame, text=f"{player['win_rate']}%",
@@ -1480,7 +902,7 @@ class SudokuApp(ctk.CTk):
         self.scored_cells = set()
         self.hide_pause_overlay()
 
-        # Reset AI if in AI battle
+        # Reset AI nếu là đấu máy
         if self.game_mode == "ai_battle" and self.ai_opponent:
             self.ai_opponent.reset_ai()
             self.ai_score = 0
@@ -1525,7 +947,7 @@ class SudokuApp(ctk.CTk):
         )
         self.hint_label.grid(row=0, column=3, sticky='e', padx=15, pady=8)
 
-        # ADD: AI battle interface
+        # THÊM: Giao diện đấu máy
         if self.game_mode == "ai_battle":
             self.create_battle_ui(header_frame)
 
@@ -1664,20 +1086,20 @@ class SudokuApp(ctk.CTk):
 
         self.update_timer()
         
-        # ADD: Start AI loop if in AI battle
+        # THÊM: Bắt đầu vòng lặp AI nếu là đấu máy
         if self.game_mode == "ai_battle":
             self.start_ai_turn()
 
     def create_battle_ui(self, header_frame):
-        """Create AI battle interface"""
+        """Tạo giao diện đấu máy"""
         if self.game_mode != "ai_battle":
             return
             
-        # Frame for AI battle info
+        # Frame chứa thông tin đấu máy
         battle_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
         battle_frame.grid(row=1, column=0, columnspan=4, sticky="ew", padx=15, pady=5)
         
-        # Player score
+        # Điểm số người chơi
         self.player_score_label = ctk.CTkLabel(
             battle_frame,
             text=f"👤 YOU: {self.player_score} ⭐",
@@ -1695,7 +1117,7 @@ class SudokuApp(ctk.CTk):
         )
         vs_label.pack(side="left", padx=10)
         
-        # AI score
+        # Điểm số AI
         self.ai_score_label = ctk.CTkLabel(
             battle_frame,
             text=f"🤖 AI: {self.ai_score} ⭐",
@@ -1704,7 +1126,7 @@ class SudokuApp(ctk.CTk):
         )
         self.ai_score_label.pack(side="left", padx=10)
         
-        # Time remaining
+        # Thời gian còn lại
         self.battle_timer_label = ctk.CTkLabel(
             battle_frame,
             text=f"⏰ {self.format_time(self.battle_time_limit)}",
@@ -1772,7 +1194,7 @@ class SudokuApp(ctk.CTk):
             
         row, col = self.selected_cell
         
-        # ALLOW EDITING AI CELLS (as long as not original cell)
+        # CHO PHÉP SỬA CẢ Ô AI (chỉ cần không phải ô gốc)
         if self.initial_board[row][col] != 0:
             messagebox.showinfo("Invalid Cell", "This cell cannot be modified!")
             return
@@ -1790,55 +1212,55 @@ class SudokuApp(ctk.CTk):
             
         row, col = self.selected_cell
         
-        # ALLOW CLEARING AI CELLS (as long as not original cell)
+        # CHO PHÉP XÓA CẢ Ô AI (chỉ cần không phải ô gốc)
         if self.initial_board[row][col] != 0:
             messagebox.showinfo("Invalid Cell", "This cell cannot be modified!")
             return
             
         self.cells[row][col].delete(0, "end")
         
-        # Reset color to block background
+        # Reset màu về màu nền block
         block_color = KITTY_BG if (row // 3 + col // 3) % 2 == 0 else KITTY_BG_ALT
         self.cell_colors[(row, col)] = block_color
         self.cells[row][col].configure(fg_color=block_color, text_color="#000000")
 
-    # ========== NEW AI BATTLE METHODS ==========
+    # ========== PHƯƠNG THỨC ĐẤU MÁY MỚI ==========
     def start_ai_turn(self):
-        """Start AI's turn"""
+        """Bắt đầu lượt đi của AI"""
         if self.game_mode != "ai_battle" or self.is_paused:
             return
             
-        # Check time
+        # Kiểm tra thời gian
         if self.time_elapsed >= self.battle_time_limit:
             self.end_ai_battle()
             return
             
-        # Update AI battle timer
+        # Cập nhật timer đấu máy
         time_left = self.battle_time_limit - self.time_elapsed
         if self.battle_timer_label:
             self.battle_timer_label.configure(text=f"⏰ {self.format_time(time_left)}")
         
-        # AI makes move
+        # AI thực hiện nước đi
         current_board = self.get_current_board_state()
         row, col, value, is_correct = self.ai_opponent.make_move(current_board, self.solution)
         
         if row is not None:
-            # Display AI's move
+            # Hiển thị nước đi của AI
             self.show_ai_move(row, col, value, is_correct)
             
-            # Update AI score
+            # Cập nhật điểm AI
             self.ai_score = self.ai_opponent.calculate_ai_score()
                 
-            # Update UI
+            # Cập nhật UI
             if self.ai_score_label:
                 self.ai_score_label.configure(text=f"🤖 AI: {self.ai_score} ⭐")
         
-        # Repeat after 2-8 seconds (depending on difficulty)
+        # Lặp lại sau 2-8 giây (tùy độ khó)
         delay = random.randint(2000, 8000)  # milliseconds
         self.ai_timer_id = self.after(delay, self.start_ai_turn)
 
     def get_current_board_state(self):
-        """Get current board state"""
+        """Lấy trạng thái bàn cờ hiện tại"""
         board_state = []
         for i in range(9):
             row = []
@@ -1852,49 +1274,49 @@ class SudokuApp(ctk.CTk):
         return board_state
 
     def show_ai_move(self, row, col, value, is_correct):
-        """Display AI's move - ALLOW EDITING"""
-        # Only display if cell is empty
+        """Hiển thị nước đi của AI - CHO PHÉP SỬA"""
+        # Chỉ hiển thị nếu ô còn trống
         if self.cells[row][col].get() == "":
             self.cells[row][col].delete(0, "end")
             self.cells[row][col].insert(0, str(value))
             
-            # Mark color for AI's move (DO NOT LOCK CELL)
+            # Đánh dấu màu cho nước đi của AI (KHÔNG KHÓA Ô)
             if is_correct:
                 self.cells[row][col].configure(
-                    fg_color="#E8F4FF",  # Light blue - AI correct
+                    fg_color="#E8F4FF",  # Xanh nhạt - AI đúng
                     text_color="#0066CC"
-                    # NO state="disabled" → allow editing
+                    # KHÔNG có state="disabled" → cho phép sửa
                 )
             else:
                 self.cells[row][col].configure(
-                    fg_color="#FFF0F0",  # Very light red - AI wrong
+                    fg_color="#FFF0F0",  # Đỏ rất nhạt - AI sai
                     text_color="#FF4444"
-                    # NO state="disabled" → allow editing
+                    # KHÔNG có state="disabled" → cho phép sửa
                 )
             
-            # Ensure cell remains editable
+            # Đảm bảo ô vẫn có thể chỉnh sửa
             self.cells[row][col].configure(state="normal")
             
-            # Rebind events (in case they were lost)
+            # Gắn lại sự kiện (phòng trường hợp bị mất)
             self.cells[row][col].bind("<KeyRelease>", lambda e, r=row, c=col: self.validate_input(r, c))
             self.cells[row][col].bind("<Button-1>", lambda e, r=row, c=col: self.select_cell(r, c))
             
-            # Check win/lose
+            # Kiểm tra thắng/thua
             self.check_ai_battle_progress()
 
     def check_ai_battle_progress(self):
-        """Check AI battle progress"""
-        # Check if board is full
+        """Kiểm tra tiến độ đấu máy"""
+        # Kiểm tra nếu bàn cờ đã đầy
         if self.is_board_completed():
             self.end_ai_battle()
             return
             
-        # Check time
+        # Kiểm tra thời gian
         if self.time_elapsed >= self.battle_time_limit:
             self.end_ai_battle()
 
     def is_board_completed(self):
-        """Check if board is completely filled"""
+        """Kiểm tra xem bàn cờ đã được điền hết chưa"""
         for i in range(9):
             for j in range(9):
                 if self.cells[i][j].get() == "":
@@ -1902,33 +1324,33 @@ class SudokuApp(ctk.CTk):
         return True
 
     def end_ai_battle(self):
-        """End AI battle"""
+        """Kết thúc trận đấu với AI"""
         self.stop_timer()
         if self.ai_timer_id:
             self.after_cancel(self.ai_timer_id)
         
-        # Determine winner
+        # Xác định người thắng
         if self.player_score > self.ai_score:
             winner = "player"
-            result_text = "🎉 YOU WIN! 🎉"
+            result_text = "🎉 BẠN THẮNG! 🎉"
         elif self.ai_score > self.player_score:
             winner = "ai"  
-            result_text = "🤖 AI WINS! 🤖"
+            result_text = "🤖 AI THẮNG! 🤖"
         else:
             winner = "draw"
-            result_text = "🤝 DRAW! 🤝"
+            result_text = "🤝 HÒA! 🤝"
         
-        # Show result
+        # Hiển thị kết quả
         messagebox.showinfo(
-            "AI Battle Ended!",
+            "Kết thúc đấu máy!",
             f"{result_text}\n\n"
-            f"Your score: {self.player_score} ⭐\n"
-            f"AI score: {self.ai_score} ⭐\n"
-            f"Time: {self.format_time(self.time_elapsed)}\n\n"
-            f"{'You are amazing! 🌟' if winner == 'player' else 'Try again next time! 💪' if winner == 'ai' else 'Balanced match! ⚖️'}"
+            f"Điểm của bạn: {self.player_score} ⭐\n"
+            f"Điểm AI: {self.ai_score} ⭐\n"
+            f"Thời gian: {self.format_time(self.time_elapsed)}\n\n"
+            f"{'Bạn xuất sắc! 🌟' if winner == 'player' else 'Cố gắng lần sau! 💪' if winner == 'ai' else 'Trận đấu cân bằng! ⚖️'}"
         )
         
-        # Update database
+        # Cập nhật database
         if self.current_user and self.user_id:
             self.db.update_user_stats(
                 self.user_id, 
@@ -1957,7 +1379,7 @@ class SudokuApp(ctk.CTk):
 
     def reset_board(self):
         self.audio_manager.play_sound('click')
-        # ADD: Stop AI timer if exists
+        # THÊM: Dừng AI timer nếu có
         if self.ai_timer_id:
             self.after_cancel(self.ai_timer_id)
             self.ai_timer_id = None
@@ -2007,7 +1429,7 @@ class SudokuApp(ctk.CTk):
         response = messagebox.askyesno("Solve Sudoku", "Are you sure you want to see the solution? The game will end.")
         if response:
             self.stop_timer()
-            # ADD: Stop AI timer if exists
+            # THÊM: Dừng AI timer nếu có
             if self.ai_timer_id:
                 self.after_cancel(self.ai_timer_id)
             for i in range(9):
@@ -2026,7 +1448,7 @@ class SudokuApp(ctk.CTk):
         val = self.cells[row][col].get().strip()
         block_color = KITTY_BG if (row // 3 + col // 3) % 2 == 0 else KITTY_BG_ALT
 
-        # CHECK IF THIS IS AN AI CELL
+        # KIỂM TRA NẾU ĐÂY LÀ Ô AI ĐÃ ĐI
         is_ai_cell = hasattr(self, 'ai_opponent') and self.ai_opponent and (row, col) in self.ai_opponent.ai_cells
 
         if not val.isdigit() or not (1 <= int(val) <= 9):
@@ -2054,14 +1476,14 @@ class SudokuApp(ctk.CTk):
             self.cell_colors[(row, col)] = "#FFE8E8"
             self.incorrect_moves += 1
             
-            # SPECIAL SCORE HANDLING FOR AI CELLS
+            # XỬ LÝ ĐIỂM ĐẶC BIỆT CHO Ô AI
             if self.game_mode == "ai_battle":
                 if is_ai_cell:
-                    # If editing AI cell and still wrong → deduct fewer points
+                    # Nếu sửa ô AI mà vẫn sai → trừ ít điểm hơn
                     self.player_score = max(0, self.player_score - 1)
                     self.add_score(-1, "Still wrong!")
                 else:
-                    # Normal cell wrong → normal deduction
+                    # Ô thường sai → trừ điểm bình thường
                     self.player_score = max(0, self.player_score - 1)
                     self.add_score(-1, "Wrong move!")
                     
@@ -2073,22 +1495,22 @@ class SudokuApp(ctk.CTk):
         else:
             self.audio_manager.play_sound('correct')
             
-            # SPECIAL COLOR AND SCORE HANDLING FOR AI CELLS
+            # XỬ LÝ MÀU SẮC VÀ ĐIỂM ĐẶC BIỆT CHO Ô AI
             if self.game_mode == "ai_battle" and is_ai_cell:
-                # Fixed wrong AI cell to correct → bonus points and special color
+                # Sửa ô AI sai thành đúng → thưởng nhiều điểm và màu đặc biệt
                 self.cells[row][col].configure(
-                    fg_color="#E8FFE8",  # Green - fixed correctly
+                    fg_color="#E8FFE8",  # Xanh lá - đã sửa đúng
                     text_color="#00AA00"
                 )
                 if (row, col) not in self.scored_cells:
                     self.correct_moves += 1
-                    self.player_score += 15  # More bonus for fixing AI mistake
+                    self.player_score += 15  # Thưởng nhiều hơn vì sửa lỗi AI
                     if self.player_score_label:
                         self.player_score_label.configure(text=f"👤 YOU: {self.player_score} ⭐")
                     self.add_score(15, "Fixed AI's mistake! 🎯")
                     self.scored_cells.add((row, col))
             else:
-                # Normal cell correct → normal handling
+                # Ô thường đúng → xử lý bình thường
                 self.cells[row][col].configure(fg_color="#E8FFE8", text_color="#00AA00")
                 self.cell_colors[(row, col)] = "#E8FFE8"
                 
@@ -2102,7 +1524,7 @@ class SudokuApp(ctk.CTk):
                     self.scored_cells.add((row, col))
 
         self.check_win()
-        # ADD: Check AI battle
+        # THÊM: Kiểm tra đấu máy
         if self.game_mode == "ai_battle":
             self.check_ai_battle_progress()
 
@@ -2120,7 +1542,7 @@ class SudokuApp(ctk.CTk):
         
         self.audio_manager.play_sound('win')
         self.stop_timer()
-        # ADD: Stop AI timer if exists
+        # THÊM: Dừng AI timer nếu có
         if self.ai_timer_id:
             self.after_cancel(self.ai_timer_id)
             
@@ -2130,7 +1552,7 @@ class SudokuApp(ctk.CTk):
         completion_bonus = 100
         self.add_score(completion_bonus, "Puzzle completed!")
         
-        # Update database if user is logged in
+        # Cập nhật database nếu user đã đăng nhập
         if self.current_user and self.user_id:
             self.db.update_user_stats(self.user_id, self.current_difficulty, final_score, self.time_elapsed, won=True)
         
