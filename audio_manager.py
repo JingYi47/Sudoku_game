@@ -24,7 +24,7 @@ class AudioManager:
             'pause': 'pause.wav'
         }
         
-        # Tạo thư mục nếu chưa tồn tại
+        
         if not os.path.exists(sound_dir):
             os.makedirs(sound_dir)
             print(f"✅ Đã tạo thư mục {sound_dir}")
@@ -83,7 +83,7 @@ class AudioManager:
             return False
             
         try:
-            # Dừng nhạc cũ nếu đang phát
+            
             if pygame.mixer.music.get_busy():
                 pygame.mixer.music.stop()
                 

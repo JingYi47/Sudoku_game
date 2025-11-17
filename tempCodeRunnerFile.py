@@ -1524,7 +1524,7 @@ class SudokuApp(ctk.CTk):
                     self.scored_cells.add((row, col))
 
         self.check_win()
-        # THÊM: Kiểm tra đấu máy
+        #Kiểm tra đấu máy
         if self.game_mode == "ai_battle":
             self.check_ai_battle_progress()
 
@@ -1542,7 +1542,7 @@ class SudokuApp(ctk.CTk):
         
         self.audio_manager.play_sound('win')
         self.stop_timer()
-        # THÊM: Dừng AI timer nếu có
+        # Dừng AI timer 
         if self.ai_timer_id:
             self.after_cancel(self.ai_timer_id)
             

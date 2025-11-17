@@ -68,5 +68,5 @@ def home_redirect(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('multiplayer/', include('multiplayer.urls')),
-    path('', home_redirect),  # TRANG CHỦ - THÊM DÒNG NÀY
+    path('', home_redirect),  
 ]

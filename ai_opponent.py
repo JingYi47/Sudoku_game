@@ -54,7 +54,7 @@ class AIOpponent:
     
     def calculate_ai_score(self):
         """Tính điểm AI real-time"""
-        base_score = self.correct_moves * 8  # AI điểm thấp hơn người chơi
+        base_score = self.correct_moves * 8  
         penalty = self.wrong_moves * 5
         return max(0, base_score - penalty)
     
@@ -63,7 +63,6 @@ class AIOpponent:
         return (len(self.ai_cells) / total_empty) * 100 if total_empty > 0 else 0
     
     def reset_ai(self):
-        """Reset trạng thái AI"""
         self.ai_cells.clear()
         self.correct_moves = 0
         self.wrong_moves = 0
